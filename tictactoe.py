@@ -3,6 +3,9 @@ Tic Tac Toe Player
 """
 
 import math, copy, random
+from sqlite3 import OptimizedUnicode
+
+from numpy import Infinity
 
 X = "X"
 O = "O"
@@ -12,10 +15,18 @@ EMPTY = None
 def initial_state():
     """
     Returns starting state of the board.
-    """
-    return [[EMPTY, EMPTY, EMPTY],
+    # """
+    # return [[EMPTY, EMPTY, EMPTY],
+    #         [EMPTY, EMPTY, EMPTY],
+    #         [EMPTY, EMPTY, EMPTY]]
+
+    return  [[EMPTY, X, O],
             [EMPTY, EMPTY, EMPTY],
-            [EMPTY, EMPTY, EMPTY]]
+            [X, EMPTY, O]]
+
+    # return  [[X, X, O],
+    #         [O, O, EMPTY],
+    #         [X, EMPTY, EMPTY]]
 
 def player(board):
     """
@@ -30,7 +41,9 @@ def player(board):
                 xcount += 1
             if board[i][j] == O:
                 ocount += 1
-    if xcount > ocount:
+    if board == initial_state():
+        return X
+    elif xcount > ocount:
         # print("O's Turn Next")
         return O
     else:
@@ -48,22 +61,23 @@ def actions(board):
                 moves.add((i,j))
     
     # Any return value is acceptable if a terminal board is provided as input
-    if terminal(board) == True:
-        return None
+    # if terminal(board) == True:
+    #     return None
     return moves
 
 def result(board, action):
     """
     Returns the board that results from making move (i, j) on the board.
     """
-    if action == None:
-        raise ValueError("No more actions")
+    # if action == None:
+        # raise ValueError("No more actions")
 
     board_copy = copy.deepcopy(board)
     for i in range(3):
         for j in range(3):
             if i == action[0] and j == action[1]:
                 board_copy[i][j] = player(board)
+    # print("",board_copy[0],"\n",board_copy[1],"\n",board_copy[2],"\n")
     return board_copy
 
 def moves_left(board):
@@ -71,9 +85,7 @@ def moves_left(board):
     Returns True if there are any moves left to play, else returns False.
     """
     for i in range(3):
-        # print(i)
         for j in range(3):
-            # print(j)
             if (board[i][j] == EMPTY):
                 return True
     return False
@@ -141,128 +153,97 @@ def winner(board):
         # print("########## Game TIED ###########")
         return None
     else: 
-        # print("No Winner *****")
         return None
-    # raise NotImplementedError
 
 def terminal(board):
     """
     Returns True if game is over, False otherwise.
     """
-    # print("terminal function")
-    if winner(board) == None:
-        # print("Game NOT over")
-        return False
-    elif winner(board) == X or winner(board) == O or moves_left(board) == False:
-        # print("Terminal Board.")
-        # print(len(board))
+    # Game over
+    if winner(board) == X or winner(board) == O or moves_left(board) == False:
         return True
-    # raise NotImplementedError
-
+    # Game in progress
+    else: 
+        return False
+   
 def utility(board):
     """
     Returns 1 if X has won the game, -1 if O has won, 0 otherwise.
     """
-    # print("Utility function")
     if winner(board) == X:
-        # print("X won.")
         return 1
     elif winner(board) == O: 
-        # print("O won.")
         return -1
-    elif winner(board) == None:
-        # print("Tied...")
+    elif moves_left(board) == False: 
         return 0
-    # else: 
-    #     # print("No winner.")
-    #     return 0
-    # raise NotImplementedError
 
 def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
-    x_moves = []
-    x_count = []
-    o_moves = []
-    o_count = []
+    xmoves = []
+    optimal_X = []
+    omoves = []
+    optimal_O = []
+    counter = 0
 
-    def maxvalue(s):
-        v = float("-inf")
-        if terminal(s):
-            return utility(s)
-        for count_x,a in enumerate(actions(s)):
-            x_count.append(count_x)
-            print("X moves: ", x_count)
-            print("move ",a,"\n")
-            print(result(s,a))
-            print("\n")
-            v = max(v,minvalue(result(s,a)))
-            if a not in x_moves:          
-                x_moves.append(a)
-        return v
-    
-    def minvalue(s):
-        v = float("inf")
-        if terminal(s):
-            return utility(s)
-        for count_o, a in enumerate(actions(s)):
-            o_count.append(count_o)
-            print("O moves: ",o_count)
-            print("move ",a,"\n")
-            print(result(s,a))
-            print("\n")
-            v = min(v,maxvalue(result(s,a)))
-            if a not in o_moves:
-                o_moves.append(a)
+    def maxvalue(state):
+        v = -10
+        if terminal(state):
+            # print("Terminal state: \n",state[0],"\n",state[1],"\n",state[2],"\n")
+            # print("Terminal: ",terminal(state)," ","Utilty value: ",utility(state))
+            return utility(state)#-1,0,or 1
+        for action in actions(state):
+            # print("current action: ",action,"\nboard: \n",  state[0],"\n",state[1],"\n",state[2],"\n")
+            v = max(v, minvalue(result(state,action)))
+            if v == -1:
+                optimal_O.append(action)
+                # print("o won")
+            elif v == 1:
+                # print("x won")
+                optimal_X.append(action)
+            elif v == 0:
+                optimal_O.append(action)
+                # print("tied")       
         return v
 
+    def minvalue(state):
+        v = 10
+        if terminal(state):
+            # print("Terminal state: \n",state[0],"\n",state[1],"\n",state[2],"\n")
+            # print("terminal: ",terminal(state)," ","utilty value: ",utility(state))
+            return utility(state)
+        for action in actions(state):
+            # print("Current action: ",action,"\nboard: \n", state[0],"\n",state[1],"\n",state[2],"\n")
+            v = min(v, maxvalue(result(state,action)))
+            if v == -1:
+                optimal_O.append(action)
+                # print("o won")
+            elif v == 1:
+                # print("x won")
+                optimal_X.append(action)
+            elif v == 0:
+                optimal_O.append(action)
+                # print("tied")       
+        return v 
 
-    # Given a state s
-    # Max player picks action a in actions(s) to get highest value of minvalue(result(s,a))
+    scores_x = []
+    scores_o = []
     if player(board) == X:
-        print("move X")
-        print("x_count: ",x_count)
         score = maxvalue(board)
-        # print("score: ",score)
+        print("score: ",score)
         if score == -1:
-            # print("o won")
-            # print(o_moves)
-            return o_moves.pop(0)
+            return optimal_O[0]
+        if score == 0:
+            return optimal_O[0]
         if score == 1:
-            # print("x won")
-            # print(x_moves)
-            return x_moves.pop(0)
-        if score == 0 and moves_left == True:
-            # print("Tied")
-            # print(o_moves)
-            return o_moves.pop(0)
-        if score == 0 and moves_left == False:
-            print("Tied")
-            return None
-
-    # Min player picks action a in actions(s) to get lowest value of maxvalue(result(s,a))
-    if player(board) == O:
-        print("move O")
-        print("o_count: ",o_count)
+            return optimal_X[0]
+    elif player(board) == O:
         score = minvalue(board)
-        # print("score: ",score)
+        print("score: ",score)
         if score == -1:
-            # print("o won")
-            # print("AI moves: ",o_moves)
-            return o_moves.pop(0)
-        elif score == 1:
-            # print("x won")
-            # print(x_moves)
-            return x_moves.pop(0)
-        elif score == 0 and moves_left == True:
-            # print("tie")
-            # print(o_moves)
-            return o_moves.pop(0)
-        elif score == 0 and moves_left == False:
-            # print("Tied")
-            return None
-    
-
-
-   
+            return optimal_O[0]
+        if score == 0:
+            return optimal_O[0]
+        if score == 1:
+            return optimal_X[0]

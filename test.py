@@ -13,16 +13,19 @@ X = "X"
 O = "O"
 EMPTY = None
 
-board = [[EMPTY,    O,      O],
-          [X,       X,      O],
-         [X,      EMPTY,  X]]
+# board = [[EMPTY,    O,      O],
+#           [X,       X,      O],
+#          [X,      EMPTY,  X]]
 
-# board =    [[X, O, O],
-#             [O, X, X],
-#             [X, X, O]]
+# board = [[X, EMPTY, EMPTY],
+#             [EMPTY, EMPTY, EMPTY],
+#             [EMPTY, EMPTY, EMPTY]]
+board =    [[X,     O,      X],
+            [O,     O,      EMPTY],
+            [EMPTY, X,      X]]
 
-# board =    [[X, O, O],
-#             [X, O, X],
+# board =    [[X, X, O],
+#             [O, O, O],
 #             [X, X, O]]
 
 # print("         Minimax             ")
